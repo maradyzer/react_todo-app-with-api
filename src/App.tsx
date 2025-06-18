@@ -240,6 +240,8 @@ export const App: React.FC = () => {
     }
   });
 
+  const allCompleted = todos.length > 0 && todos.every(todo => todo.completed);
+
   const activeTodosCount = todos.filter(todo => !todo.completed).length;
   const hasCompletedTodos = todos.some(todo => todo.completed);
 
@@ -254,7 +256,7 @@ export const App: React.FC = () => {
           onAddTodo={handleAddTodo}
           inputRef={inputRef}
           handleToggleAll={handleToggleAll}
-          allCompleted={todos.length > 0 && todos.every(todo => todo.completed)}
+          allCompleted={allCompleted}
           isDisabled={isLoading}
           isAdding={isAdding}
           updatingIds={updatingIds}

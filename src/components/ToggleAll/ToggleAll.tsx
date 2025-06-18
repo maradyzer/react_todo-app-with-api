@@ -16,6 +16,8 @@ export const ToggleAll: React.FC<Props> = ({
   updatingIds,
   todosCount,
 }) => {
+  const isDisabled = isLoading || updatingIds.length > 0;
+
   if (todosCount === 0 || isLoading) {
     return null;
   }
@@ -26,7 +28,7 @@ export const ToggleAll: React.FC<Props> = ({
       className={cn('todoapp__toggle-all', { active: allCompleted })}
       data-cy="ToggleAllButton"
       onClick={handleToggleAll}
-      disabled={isLoading || updatingIds.length > 0}
+      disabled={isDisabled}
     />
   );
 };

@@ -30,31 +30,32 @@ export const TodoList: React.FC<Props> = ({
   onCancelEditing,
 }) => (
   <section className="todoapp__main" data-cy="TodoList">
-    {todos.map(todo => (
-      <TodoItem
-        key={todo.id}
-        todo={todo}
-        onUpdate={onUpdate}
-        isUpdating={updatingIds.includes(todo.id)}
-        deleteTodo={onDelete}
-        isDisabled={loadingIds.includes(todo.id)}
-        isLoading={!isAdding && loadingIds.includes(todo.id)}
-        isEditing={editingTodoId === todo.id}
-        updateError={updateErrorId === todo.id}
-        onStartEditing={() => onStartEditing(todo.id)}
-        onCancelEditing={onCancelEditing}
-      />
-    ))}
+    {todos.map(todo => {
+      const isUpdating = updatingIds.includes(todo.id);
+      const isDisabled = loadingIds.includes(todo.id);
+      const isLoading = !isAdding && isDisabled;
+      const isEditing = editingTodoId === todo.id;
+      const updateError = updateErrorId === todo.id;
+
+      return (
+        <TodoItem
+          key={todo.id}
+          todo={todo}
+          onUpdate={onUpdate}
+          isUpdating={isUpdating}
+          deleteTodo={onDelete}
+          isDisabled={isDisabled}
+          isLoading={isLoading}
+          isEditing={isEditing}
+          updateError={updateError}
+          onStartEditing={() => onStartEditing(todo.id)}
+          onCancelEditing={onCancelEditing}
+        />
+      );
+    })}
 
     {tempTodo && isAdding && (
-      <TodoItem
-        todo={tempTodo}
-        isTemp={true}
-        isLoading={true}
-        isDisabled={true}
-        onUpdate={() => {}}
-        deleteTodo={() => {}}
-      />
+      <TodoItem todo={tempTodo} isTemp isLoading isDisabled />
     )}
   </section>
 );
