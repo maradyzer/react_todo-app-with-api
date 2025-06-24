@@ -1,108 +1,85 @@
-import React, { useState, useEffect } from 'react';
-import cn from 'classnames';
+import React, { useState } from 'react';
 import { Todo } from '../../types/Todo';
+import cn from 'classnames';
 
-type Props = {
+interface TodoItemProps {
   todo: Todo;
-  onUpdate?: (id: number, newTitle?: string) => void;
-  deleteTodo?: (id: number) => void;
-  isTemp?: boolean;
-  isDisabled?: boolean;
-  isLoading?: boolean;
-  isUpdating?: boolean;
-  isEditing?: boolean;
-  updateError?: boolean;
-  onStartEditing?: () => void;
-  onCancelEditing?: () => void;
-};
+  onTodoDelete: () => void;
+  isProcessingDeleteTodo: boolean;
+  onToggleCompleted: () => void;
+  onTitleUpdate: (todoToUpdate: Todo, newTitle: string) => Promise<void>;
+}
 
-export const TodoItem: React.FC<Props> = ({
+export const TodoItem: React.FC<TodoItemProps> = ({
   todo,
-  onUpdate,
-  deleteTodo,
-  isTemp = false,
-  isDisabled = false,
-  isLoading = false,
-  isUpdating = false,
-  isEditing = false,
-  updateError = false,
-  onStartEditing,
-  onCancelEditing,
+  onTodoDelete,
+  isProcessingDeleteTodo,
+  onToggleCompleted,
+  onTitleUpdate,
 }) => {
-  const { id, title, completed } = todo;
-
-  const [editedTitle, setEditedTitle] = useState(title);
-
-  useEffect(() => {
-    if (isEditing) {
-      setEditedTitle(title);
-    }
-  }, [isEditing, title]);
-
-  const inputDisabled = isDisabled || isLoading || isUpdating;
-  const isLoaderVisible = isTemp || isLoading || isUpdating;
-
-  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Escape') {
-      setEditedTitle(title);
-      onCancelEditing?.();
-    }
-  };
+  const [isEditing, setIsEditing] = useState(false);
+  const [newTitle, setNewTitle] = useState(todo.title);
 
   const handleSubmit = () => {
-    const trimmedTitle = editedTitle.trim();
+    const trimmedTitle = newTitle.trim();
 
-    if (trimmedTitle === title) {
-      onCancelEditing?.();
-
-      return;
-    }
-
-    if (!trimmedTitle) {
-      deleteTodo?.(id);
+    if (trimmedTitle === '') {
+      onTodoDelete();
 
       return;
     }
 
-    onUpdate?.(id, trimmedTitle);
+    if (trimmedTitle === todo.title) {
+      setIsEditing(false);
+
+      return;
+    }
+
+    onTitleUpdate(todo, trimmedTitle).then(() => setIsEditing(false));
+  };
+
+  const handleOnSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    handleSubmit();
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Escape') {
+      setNewTitle(todo.title);
+      setIsEditing(false);
+    }
   };
 
   return (
     <div
       data-cy="Todo"
       className={cn('todo', {
-        completed,
-        loading: isTemp,
-        'is-error': updateError,
+        completed: todo.completed,
       })}
     >
       <label className="todo__status-label">
         <input
+          aria-label="Todo Status"
           data-cy="TodoStatus"
           type="checkbox"
           className="todo__status"
-          aria-label="Toggle todo status"
-          checked={completed}
-          onChange={() => onUpdate?.(id)}
-          disabled={inputDisabled}
+          checked={todo.completed}
+          onChange={onToggleCompleted}
+          disabled={isProcessingDeleteTodo}
         />
       </label>
 
       {isEditing ? (
-        <form
-          onSubmit={e => {
-            e.preventDefault();
-            handleSubmit();
-          }}
-        >
+        <form onSubmit={handleOnSubmit}>
           <input
             data-cy="TodoTitleField"
+            type="text"
             className="todo__title-field"
-            value={editedTitle}
-            onChange={e => setEditedTitle(e.target.value)}
+            placeholder="Empty todo will be deleted"
+            value={newTitle}
+            onChange={event => setNewTitle(event.target.value)}
             onBlur={handleSubmit}
-            onKeyDown={handleInputKeyDown}
-            disabled={inputDisabled}
+            onKeyDown={handleKeyDown}
             autoFocus
           />
         </form>
@@ -111,17 +88,17 @@ export const TodoItem: React.FC<Props> = ({
           <span
             data-cy="TodoTitle"
             className="todo__title"
-            onDoubleClick={() => onStartEditing?.()}
+            onDoubleClick={() => setIsEditing(true)}
           >
-            {title}
+            {todo.title}
           </span>
 
           <button
             type="button"
             className="todo__remove"
             data-cy="TodoDelete"
-            onClick={() => deleteTodo?.(id)}
-            disabled={isDisabled}
+            onClick={onTodoDelete}
+            disabled={isProcessingDeleteTodo}
           >
             ×
           </button>
@@ -130,7 +107,9 @@ export const TodoItem: React.FC<Props> = ({
 
       <div
         data-cy="TodoLoader"
-        className={cn('modal', 'overlay', { 'is-active': isLoaderVisible })}
+        className={cn('modal', 'overlay', {
+          'is-active': isProcessingDeleteTodo,
+        })}
       >
         <div className="modal-background has-background-white-ter" />
         <div className="loader" />

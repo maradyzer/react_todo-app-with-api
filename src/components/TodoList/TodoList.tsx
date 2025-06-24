@@ -1,61 +1,55 @@
-import React from 'react';
+import { TransitionGroup } from 'react-transition-group';
 import { Todo } from '../../types/Todo';
-import { TodoItem } from './../TodoItem/TodoItem';
+import { TodoItem } from '../TodoItem/TodoItem';
+import { CSSTransition } from 'react-transition-group';
 
-type Props = {
-  todos: Todo[];
-  onUpdate: (id: number, newTitle?: string) => void;
-  updatingIds: number[];
-  onDelete: (id: number) => void;
+interface TodoListProps {
+  filteredTodos: Todo[];
+  handleTodoDelete: (todoId: number) => void;
   tempTodo: Todo | null;
-  loadingIds: number[];
-  isAdding: boolean;
-  editingTodoId: number | null;
-  updateErrorId: number | null;
-  onStartEditing: (id: number) => void;
-  onCancelEditing: () => void;
-};
+  todoInOperation: number[];
+  handleTodoStatusToggle: (todo: Todo) => void;
+  handleTodoTitleUpdate: (
+    todoToUpdate: Todo,
+    newTitle: string,
+  ) => Promise<void>;
+}
 
-export const TodoList: React.FC<Props> = ({
-  todos,
-  onUpdate,
-  updatingIds,
-  onDelete,
+export const TodoList: React.FC<TodoListProps> = ({
+  filteredTodos,
+  handleTodoDelete,
   tempTodo,
-  loadingIds,
-  isAdding,
-  editingTodoId,
-  updateErrorId,
-  onStartEditing,
-  onCancelEditing,
-}) => (
-  <section className="todoapp__main" data-cy="TodoList">
-    {todos.map(todo => {
-      const isUpdating = updatingIds.includes(todo.id);
-      const isDisabled = loadingIds.includes(todo.id);
-      const isLoading = !isAdding && isDisabled;
-      const isEditing = editingTodoId === todo.id;
-      const updateError = updateErrorId === todo.id;
+  todoInOperation,
+  handleTodoStatusToggle,
+  handleTodoTitleUpdate,
+}) => {
+  return (
+    <section className="todoapp__main" data-cy="TodoList">
+      <TransitionGroup>
+        {filteredTodos.map(todo => (
+          <CSSTransition key={todo.id} timeout={300} classNames="item">
+            <TodoItem
+              todo={todo}
+              onTodoDelete={() => handleTodoDelete(todo.id)}
+              isProcessingDeleteTodo={todoInOperation.includes(todo.id)}
+              onToggleCompleted={() => handleTodoStatusToggle(todo)}
+              onTitleUpdate={handleTodoTitleUpdate}
+            />
+          </CSSTransition>
+        ))}
 
-      return (
-        <TodoItem
-          key={todo.id}
-          todo={todo}
-          onUpdate={onUpdate}
-          isUpdating={isUpdating}
-          deleteTodo={onDelete}
-          isDisabled={isDisabled}
-          isLoading={isLoading}
-          isEditing={isEditing}
-          updateError={updateError}
-          onStartEditing={() => onStartEditing(todo.id)}
-          onCancelEditing={onCancelEditing}
-        />
-      );
-    })}
-
-    {tempTodo && isAdding && (
-      <TodoItem todo={tempTodo} isTemp isLoading isDisabled />
-    )}
-  </section>
-);
+        {tempTodo && (
+          <CSSTransition key={tempTodo.id} timeout={300} classNames="temp-item">
+            <TodoItem
+              todo={tempTodo}
+              onTodoDelete={() => handleTodoDelete(tempTodo.id)}
+              isProcessingDeleteTodo={true}
+              onToggleCompleted={() => handleTodoStatusToggle(tempTodo)}
+              onTitleUpdate={handleTodoTitleUpdate}
+            />
+          </CSSTransition>
+        )}
+      </TransitionGroup>
+    </section>
+  );
+};
